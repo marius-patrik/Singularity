@@ -70,10 +70,6 @@ export function validateEvent(input: unknown): Event {
   return EventSchema.parse(input);
 }
 
-export function validateEngineMessage(input: unknown): EngineMessage {
-  return EngineMessageSchema.parse(input);
-}
-
 export function validateProject(input: unknown): Project {
   return ProjectSchema.parse(input);
 }
@@ -195,4 +191,8 @@ export function parseEngineFrames(buffer: Uint8Array): {
     offset += 4 + length;
   }
   return { messages, remainder: buffer.subarray(offset) };
+}
+
+export function validateEngineMessage(parsed: unknown): EngineMessage {
+  return EngineMessageSchema.parse(parsed);
 }
