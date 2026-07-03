@@ -132,8 +132,8 @@ describe("ProjectManager export", () => {
 
     expect(writeFileSpy).toHaveBeenCalled();
     expect(renameSpy).toHaveBeenCalled();
-    const finalPath = renameSpy.mock.calls[0][1].fsPath as string;
-    expect(finalPath.replace(/\\/g, "/")).toBe("/exports/song.wav");
+    const finalPath = (renameSpy.mock.calls[0][1].fsPath as string).replace(/\\/g, "/");
+    expect(finalPath).toBe("/exports/song.wav");
     const written = writeFileSpy.mock.calls[0][1] as Uint8Array;
     expect(written).toEqual(WAV_BYTES);
   });
@@ -148,8 +148,8 @@ describe("ProjectManager export", () => {
 
     expect(writeFileSpy).toHaveBeenCalled();
     expect(renameSpy).toHaveBeenCalled();
-    const finalPath = renameSpy.mock.calls[0][1].fsPath as string;
-    expect(finalPath.replace(/\\/g, "/")).toBe("/exports/song.wav");
+    const finalPath = (renameSpy.mock.calls[0][1].fsPath as string).replace(/\\/g, "/");
+    expect(finalPath).toBe("/exports/song.wav");
     const written = writeFileSpy.mock.calls[0][1] as Uint8Array;
     expect(written).toEqual(WAV_BYTES);
   });
