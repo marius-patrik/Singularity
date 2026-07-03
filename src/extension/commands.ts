@@ -40,6 +40,7 @@ export function registerCommands(deps: CommandDependencies): vscode.Disposable[]
           if (!(error instanceof vscode.CancellationError)) {
             vscode.window.showErrorMessage(`VSDAW: ${message}`);
           }
+          throw error;
         }
       }),
     );

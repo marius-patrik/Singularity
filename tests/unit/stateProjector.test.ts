@@ -336,7 +336,7 @@ describe("ProjectStateProjector", () => {
     await projector.requestDeviceList();
 
     expect(router.requestEngine).toHaveBeenCalledWith(PROJECT_ID, "device.list", undefined, {
-      responseType: "device.list",
+      responseType: "device.list.ack",
       timeoutMs: 10000,
     });
 

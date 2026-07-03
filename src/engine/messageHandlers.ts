@@ -99,7 +99,7 @@ function routeMessage(
         return { type: "error", message: "Project data is required" };
       }
       const binary = base64ToArrayBuffer(opts.data);
-      controller.loadProject(binary);
+      controller.loadProject(binary, opts.trackMetadata);
       return { type: "ok" };
     }
     case MessageType.ProjectSave: {

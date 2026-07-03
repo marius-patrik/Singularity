@@ -45,10 +45,10 @@ import {
 import { SampleStorage, SoundfontStorage } from "@opendaw/studio-core";
 import { DEFAULT_AUTOMATION_VALUE } from "../shared/automation.js";
 import type {
+  TrackType as ApiTrackType,
   AutomationLaneState,
   AutomationPointState,
   AutomationTarget,
-  TrackType as ApiTrackType,
   DeviceListItem,
   DeviceParameterDescriptor,
   ExportFormat,
@@ -166,7 +166,10 @@ export class ProjectController {
     }
   }
 
-  loadProject(data: ArrayBufferLike) {
+  loadProject(
+    data: ArrayBufferLike,
+    trackMetadata?: Array<{ id: string; name?: string; type?: ApiTrackType; color?: string }>,
+  ) {
     try {
       this.closeProject();
       log("project", "loading project");
@@ -179,6 +182,7 @@ export class ProjectController {
         soundfontService: this.bootEnv.soundfontService,
       };
       this.project = Project.load(env, data as ArrayBuffer);
+      this.applyTrackMetadata(trackMetadata);
       this.project.startAudioWorklet();
       this.attachTransportObservers();
       this.broadcastState();
@@ -227,6 +231,27 @@ export class ProjectController {
     this.automationLanes.clear();
     this.automationPoints.clear();
     this.lastAutomationValues.clear();
+  }
+
+  private applyTrackMetadata(
+    trackMetadata?: Array<{ id: string; name?: string; type?: ApiTrackType; color?: string }>,
+  ) {
+    this.trackNames.clear();
+    this.trackColors.clear();
+    this.trackTypes.clear();
+    if (!trackMetadata) return;
+
+    for (const track of trackMetadata) {
+      this.trackNames.set(track.id, track.name ?? track.id);
+      if (track.type) this.trackTypes.set(track.id, track.type);
+      if (track.color) this.trackColors.set(track.id, track.color);
+      try {
+        const adapter = this.resolveAudioUnit(track.id);
+        adapter.input.label = track.name ?? track.id;
+      } catch {
+        // Metadata can be stale if the engine graph was edited externally.
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -302,40 +327,45 @@ export class ProjectController {
 
     const project = this.assertProject();
     let audioUnit: AudioUnitBox;
+    let id: string;
 
-    if (type === "midi") {
-      const product = this.api.createInstrument(InstrumentFactories.Tape, {
-        name: name ?? "MIDI Track",
-      });
-      audioUnit = product.audioUnitBox;
-    } else if (type === "audio") {
-      const capture = AudioUnitFactory.trackTypeToCapture(project.boxGraph, SdkTrackType.Audio);
-      audioUnit = AudioUnitFactory.create(project.skeleton, "instrument" as any, capture, index);
-      this.api.createAudioTrack(audioUnit, 0);
-    } else {
-      // bus
-      audioUnit = AudioUnitFactory.create(project.skeleton, "bus" as any, Option.None, index);
-      this.api.createAudioTrack(audioUnit, 0);
-    }
-
-    const id = UUID.toString(audioUnit.address.uuid);
-    this.trackNames.set(id, name ?? `${type} track`);
-    this.trackTypes.set(id, type);
-    if (color) this.trackColors.set(id, color);
-
-    // Ensure the displayed label stays in sync with our name map.
+    this.boxGraph.beginTransaction();
     try {
-      const adapter = this.resolveAudioUnit(id);
-      adapter.input.label = this.trackNames.get(id) ?? id;
-    } catch {
-      // ignore
-    }
+      if (type === "midi") {
+        const product = this.api.createInstrument(InstrumentFactories.Tape, {
+          name: name ?? "MIDI Track",
+        });
+        audioUnit = product.audioUnitBox;
+      } else if (type === "audio") {
+        const capture = AudioUnitFactory.trackTypeToCapture(project.boxGraph, SdkTrackType.Audio);
+        audioUnit = AudioUnitFactory.create(project.skeleton, "instrument" as any, capture, index);
+        this.api.createAudioTrack(audioUnit, 0);
+      } else {
+        // bus
+        audioUnit = AudioUnitFactory.create(project.skeleton, "bus" as any, Option.None, index);
+        this.api.createAudioTrack(audioUnit, 0);
+      }
 
-    if (index !== undefined) {
-      const adapter = this.resolveAudioUnit(id);
-      adapter.move(index - adapter.indexField.getValue());
-    }
+      id = UUID.toString(audioUnit.address.uuid);
+      this.trackNames.set(id, name ?? `${type} track`);
+      this.trackTypes.set(id, type);
+      if (color) this.trackColors.set(id, color);
 
+      // Ensure the displayed label stays in sync with our name map.
+      try {
+        const adapter = this.resolveAudioUnit(id);
+        adapter.input.label = this.trackNames.get(id) ?? id;
+      } catch {
+        // ignore
+      }
+
+      if (index !== undefined) {
+        const adapter = this.resolveAudioUnit(id);
+        adapter.move(index - adapter.indexField.getValue());
+      }
+    } finally {
+      this.boxGraph.endTransaction();
+    }
     this.broadcastState();
     return id;
   }
@@ -388,13 +418,23 @@ export class ProjectController {
 
   setTrackMute(trackId: string, mute: boolean) {
     const unit = this.resolveAudioUnit(trackId);
-    unit.namedParameter.mute.setValue(mute);
+    this.boxGraph.beginTransaction();
+    try {
+      unit.namedParameter.mute.setValue(mute);
+    } finally {
+      this.boxGraph.endTransaction();
+    }
     this.broadcastState();
   }
 
   setTrackSolo(trackId: string, solo: boolean) {
     const unit = this.resolveAudioUnit(trackId);
-    unit.namedParameter.solo.setValue(solo);
+    this.boxGraph.beginTransaction();
+    try {
+      unit.namedParameter.solo.setValue(solo);
+    } finally {
+      this.boxGraph.endTransaction();
+    }
     this.broadcastState();
   }
 
@@ -538,15 +578,22 @@ export class ProjectController {
 
   createMidiRegion(trackId: string, position: number, duration: number, name?: string): string {
     const track = this.resolveMainTrack(trackId);
-    const regionBox = this.api.createNoteRegion({
-      trackBox: track.box,
-      position,
-      duration,
-      name: name ?? "MIDI",
-    });
-    const adapter = this.assertProject().boxAdapters.adapterFor(regionBox, NoteRegionBoxAdapter);
+    let regionId = "";
+    this.boxGraph.beginTransaction();
+    try {
+      const regionBox = this.api.createNoteRegion({
+        trackBox: track.box,
+        position,
+        duration,
+        name: name ?? "MIDI",
+      });
+      const adapter = this.assertProject().boxAdapters.adapterFor(regionBox, NoteRegionBoxAdapter);
+      regionId = UUID.toString(adapter.uuid);
+    } finally {
+      this.boxGraph.endTransaction();
+    }
     this.broadcastState();
-    return UUID.toString(adapter.uuid);
+    return regionId;
   }
 
   moveRegion(regionId: string, position: number, trackId?: string) {

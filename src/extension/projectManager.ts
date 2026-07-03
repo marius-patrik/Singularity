@@ -425,16 +425,18 @@ export class ProjectManager implements vscode.Disposable {
       const response = await this.router.requestEngine(
         session.projectId,
         MessageType.ProjectSave,
-        { format: "arraybuffer" },
+        { format: "base64" },
         { responseType: `${MessageType.ProjectSave}.ack`, timeoutMs: 30000 },
       );
       if (token?.isCancellationRequested) return;
-      const bytes = response.payload as Uint8Array | ArrayBuffer | undefined;
+      const bytes = projectSavePayloadToUint8Array(
+        response.payload as string | Uint8Array | ArrayBuffer | undefined,
+      );
       if (!bytes) {
         throw new Error("Engine returned empty project data");
       }
 
-      const engineBin = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
+      const engineBin = bytes;
       const projectJson = await this.buildProjectJsonForSave(session, targetUri);
       const bundle = await writeBundle(projectJson, session.audioFiles, engineBin);
       await this.writeProjectBytes(targetUri, bundle);
@@ -566,14 +568,16 @@ export class ProjectManager implements vscode.Disposable {
     const response = await this.router.requestEngine(
       projectId,
       MessageType.ProjectSave,
-      { format: "arraybuffer" } as const,
+      { format: "base64" } as const,
       { responseType: `${MessageType.ProjectSave}.ack`, timeoutMs: 30000 },
     );
-    const bytes = response.payload as Uint8Array | ArrayBuffer | undefined;
+    const bytes = projectSavePayloadToUint8Array(
+      response.payload as string | Uint8Array | ArrayBuffer | undefined,
+    );
     if (!bytes) {
       throw new Error("Engine returned empty project data");
     }
-    return bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
+    return bytes;
   }
 
   private async restoreEngineSnapshot(projectId: string, snapshot: Uint8Array): Promise<void> {
@@ -716,6 +720,12 @@ export class ProjectManager implements vscode.Disposable {
     if (bundle.engineBin && bundle.engineBin.byteLength > 0) {
       const payload: ProjectLoadPayload = {
         data: Buffer.from(bundle.engineBin).toString("base64"),
+        trackMetadata: bundle.project.tracks.map((track) => ({
+          id: track.id,
+          name: track.name,
+          type: track.type,
+          color: track.color,
+        })),
       };
       const loadMessage: MessageEnvelope = {
         projectId: session.projectId,
@@ -763,12 +773,14 @@ export class ProjectManager implements vscode.Disposable {
       const response = await this.router.requestEngine(
         session.projectId,
         MessageType.ProjectSave,
-        { format: "arraybuffer" },
+        { format: "base64" },
         { responseType: `${MessageType.ProjectSave}.ack`, timeoutMs: 30000 },
       );
-      const bytes = response.payload as Uint8Array | ArrayBuffer | undefined;
+      const bytes = projectSavePayloadToUint8Array(
+        response.payload as string | Uint8Array | ArrayBuffer | undefined,
+      );
       if (!bytes) return;
-      const engineBin = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
+      const engineBin = bytes;
       const projectJson = await this.buildProjectJsonForSave(session, session.uri);
       const bundle = await writeBundle(projectJson, session.audioFiles, engineBin);
       await fs.writeFile(recoveryPath, bundle);
@@ -1127,11 +1139,21 @@ export class ProjectManager implements vscode.Disposable {
     if (!session) {
       throw new Error(`No session for project ${projectId}`);
     }
-    const response = await this.router.requestEngine(projectId, MessageType.StateGet, undefined, {
-      responseType: `${MessageType.StateGet}.result`,
-      timeoutMs: 10000,
-    });
-    return response.payload as ProjectState;
+    try {
+      const response = await this.router.requestEngine(projectId, MessageType.StateGet, undefined, {
+        responseType: `${MessageType.StateGet}.result`,
+        timeoutMs: 10000,
+      });
+      return response.payload as ProjectState;
+    } catch (error) {
+      const cachedState = this.projectors.get(projectId)?.getProjectState();
+      if (cachedState) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.outputChannel.appendLine(`[project] state get failed, using cached state: ${message}`);
+        return cachedState;
+      }
+      throw error;
+    }
   }
 
   async saveActiveProject(): Promise<void> {
@@ -1173,6 +1195,15 @@ export class ProjectManager implements vscode.Disposable {
 function base64ToUint8Array(base64: string): Uint8Array {
   const buffer = Buffer.from(base64, "base64");
   return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
+function projectSavePayloadToUint8Array(
+  payload: string | Uint8Array | ArrayBuffer | undefined,
+): Uint8Array | undefined {
+  if (!payload) return undefined;
+  if (typeof payload === "string") return base64ToUint8Array(payload);
+  if (payload instanceof ArrayBuffer) return new Uint8Array(payload);
+  return payload;
 }
 
 function replaceExtension(filePath: string, ext: string): string {

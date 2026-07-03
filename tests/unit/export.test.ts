@@ -1,4 +1,6 @@
 import type * as vscode from "vscode";
+import type { MessageRouter } from "../../src/extension/messageRouter.js";
+import type { PlaywrightEngineManager } from "../../src/extension/playwrightEngine.js";
 import { ProjectManager } from "../../src/extension/projectManager.js";
 import { MessageType } from "../../src/shared/protocol.js";
 
@@ -17,7 +19,7 @@ function createMockRouter() {
     getViews: jest.fn(() => []),
   } as unknown as jest.Mocked<
     Pick<
-      import("../../src/extension/messageRouter.js").MessageRouter,
+      MessageRouter,
       | "requestEngine"
       | "routeToEngine"
       | "broadcastToViews"
@@ -49,8 +51,8 @@ function createProjectManager(router: ReturnType<typeof createMockRouter>): Proj
   const manager = new ProjectManager({
     context,
     outputChannel,
-    router: router as unknown as import("../../src/extension/messageRouter.js").MessageRouter,
-    engineManager: {} as unknown as import("../../src/extension/playwrightEngine.js").PlaywrightEngineManager,
+    router: router as unknown as MessageRouter,
+    engineManager: {} as unknown as PlaywrightEngineManager,
   });
 
   const sessionUri = { toString: () => "file:///test.vsdaw" } as unknown as vscode.Uri;
@@ -131,7 +133,7 @@ describe("ProjectManager export", () => {
     expect(writeFileSpy).toHaveBeenCalled();
     expect(renameSpy).toHaveBeenCalled();
     const finalPath = renameSpy.mock.calls[0][1].fsPath as string;
-    expect(finalPath).toBe("/exports/song.wav");
+    expect(finalPath.replace(/\\/g, "/")).toBe("/exports/song.wav");
     const written = writeFileSpy.mock.calls[0][1] as Uint8Array;
     expect(written).toEqual(WAV_BYTES);
   });
@@ -147,7 +149,7 @@ describe("ProjectManager export", () => {
     expect(writeFileSpy).toHaveBeenCalled();
     expect(renameSpy).toHaveBeenCalled();
     const finalPath = renameSpy.mock.calls[0][1].fsPath as string;
-    expect(finalPath).toBe("/exports/song.wav");
+    expect(finalPath.replace(/\\/g, "/")).toBe("/exports/song.wav");
     const written = writeFileSpy.mock.calls[0][1] as Uint8Array;
     expect(written).toEqual(WAV_BYTES);
   });

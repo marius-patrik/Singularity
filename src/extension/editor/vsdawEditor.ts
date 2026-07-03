@@ -151,12 +151,15 @@ export class VsdawEditorProvider implements vscode.CustomEditorProvider<VsdawDoc
         const response = await this.projectManager.router.requestEngine(
           session.projectId,
           MessageType.ProjectSave,
-          { format: "arraybuffer" },
+          { format: "base64" },
           { responseType: `${MessageType.ProjectSave}.ack`, timeoutMs: 30000 },
         );
-        const bytes = response.payload as Uint8Array | ArrayBuffer | undefined;
-        if (bytes) {
-          data = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
+        const payload = response.payload as string | Uint8Array | ArrayBuffer | undefined;
+        if (typeof payload === "string") {
+          const buffer = Buffer.from(payload, "base64");
+          data = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        } else if (payload) {
+          data = payload instanceof ArrayBuffer ? new Uint8Array(payload) : payload;
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

@@ -294,6 +294,7 @@
     "lucide-react": "^1.21.0",
     "mocha": "^10.7.0",
     "ovsx": "^0.10.0",
+    "playwright": "^1.61.1",
     "postcss": "^8.5.15",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

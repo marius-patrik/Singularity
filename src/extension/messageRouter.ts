@@ -325,6 +325,20 @@ export class MessageRouter implements vscode.Disposable {
     const req = map.get(message.requestId);
     if (!req) return false;
 
+    if (message.type === MessageType.EngineError) {
+      const text =
+        typeof message.payload === "object" && message.payload !== null
+          ? ((message.payload as { message?: string }).message ?? JSON.stringify(message.payload))
+          : String(message.payload);
+      clearTimeout(req.timeout);
+      map.delete(message.requestId);
+      if (map.size === 0) {
+        this.pending.delete(projectId);
+      }
+      req.reject(new Error(text));
+      return true;
+    }
+
     if (req.responseType && req.responseType !== message.type) {
       this.outputChannel.appendLine(
         `[router] response type mismatch for ${message.requestId}: expected ${req.responseType}, got ${message.type}`,

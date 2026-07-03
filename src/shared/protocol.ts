@@ -192,6 +192,12 @@ export interface ProjectNewPayload {
 
 export interface ProjectLoadPayload {
   data: string;
+  trackMetadata?: Array<{
+    id: string;
+    name?: string;
+    type?: TrackType;
+    color?: string;
+  }>;
 }
 
 export interface ProjectSavePayload {
