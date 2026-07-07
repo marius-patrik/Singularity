@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "0.1.0",
+  "versioning": "semver",
+  "releaseBranchPrefix": "release/v",
+  "tagPrefix": "v",
+  "preReleaseTags": ["alpha", "beta", "rc"],
+  "requiredChecks": ["typecheck", "lint", "format:check", "test", "build"],
+  "artifacts": {
+    "desktop": ["tauri"],
+    "engine": ["cmake"],
+    "backend": ["node"]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.1.0",
+  "platforms": ["macos", "windows", "linux"],
+  "desktop": {
+    "tool": "tauri",
+    "sidecars": ["singularity-engine"],
+    "notarize": false
+  },
+  "engine": {
+    "tool": "cmake",
+    "preset": "Release",
+    "output": "engine/build/Release/singularity-engine"
+  },
+  "backend": {
+    "tool": "bun",
+    "bundle": false
+  }
+}

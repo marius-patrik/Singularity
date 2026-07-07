@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "singularity",
+  "primaryBranch": "main",
+  "integrationBranch": "integration/fl-studio-rewrite",
+  "branchingPolicy": "rebase-merge",
+  "requiredStatusChecks": ["typecheck", "lint", "format:check", "test", "build"],
+  "labels": [".darkfactory/labels.json"],
+  "releasePolicy": ".darkfactory/release-policy.json",
+  "installerPolicy": ".darkfactory/installer-policy.json",
+  "conventions": ".darkfactory/release-conventions.md"
+}

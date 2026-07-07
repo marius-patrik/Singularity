@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.1.0",
+  "labels": [
+    { "name": "spec", "color": "0052CC", "description": "Specification or design work" },
+    { "name": "feat", "color": "0E8A16", "description": "New feature" },
+    { "name": "fix", "color": "D93F0B", "description": "Bug fix" },
+    { "name": "chore", "color": "FEF2C0", "description": "Maintenance or tooling" },
+    { "name": "refactor", "color": "C5DEF5", "description": "Code restructuring" },
+    { "name": "docs", "color": "0075CA", "description": "Documentation" },
+    { "name": "engine", "color": "5319E7", "description": "JUCE audio engine" },
+    { "name": "backend", "color": "5319E7", "description": "API server and bridge" },
+    { "name": "desktop", "color": "5319E7", "description": "Tauri desktop app" },
+    { "name": "shared", "color": "5319E7", "description": "Shared packages" },
+    { "name": "integration", "color": "FF7619", "description": "Integration branch work" },
+    { "name": "dark-factory", "color": "000000", "description": "Managed repository system" }
+  ]
+}
