@@ -1,11 +1,17 @@
 import type { z } from "zod";
 import type { AssetKindSchema, AssetRefSchema } from "./schemas/asset.js";
 import type {
+  AgentSessionSchema,
+  AgentToolCallSchema,
+  AgentToolResultSchema,
+} from "./schemas/agent.js";
+import type {
   AutomationClipSchema,
   AutomationPointSchema,
   AutomationTargetSchema,
   AutomationTargetTypeSchema,
 } from "./schemas/automation.js";
+import type { BrowserActionSchema, BrowserSessionSchema } from "./schemas/browser.js";
 import type { EntityIdSchema, HexColorSchema } from "./schemas/base.js";
 import type {
   ChannelRackSchema,
@@ -15,7 +21,11 @@ import type {
   MixerInsertRefSchema,
 } from "./schemas/channel.js";
 import type {
+  EngineEventSchema,
   EngineMessageSchema,
+  EngineReplySchema,
+} from "./schemas/engine.js";
+import type {
   ErrorCodeSchema,
   ErrorEnvelopeSchema,
   EventSchema,
@@ -23,8 +33,15 @@ import type {
   MessageSchema,
   ReplySchema,
 } from "./schemas/envelope.js";
-import type { MixerInsertSchema, MixerSchema, PluginSlotSchema } from "./schemas/mixer.js";
-import type { AudioInputSourceSchema, InsertKindSchema, SendSchema } from "./schemas/mixer.js";
+import type { FileEntrySchema, FileRootSchema } from "./schemas/files.js";
+import type {
+  AudioInputSourceSchema,
+  InsertKindSchema,
+  MixerInsertSchema,
+  MixerSchema,
+  PluginSlotSchema,
+  SendSchema,
+} from "./schemas/mixer.js";
 import type {
   NoteEventSchema,
   PatternChannelDataSchema,
@@ -40,8 +57,13 @@ import type {
   PlaylistSchema,
   PlaylistTrackSchema,
 } from "./schemas/playlist.js";
-import type { PluginFormatSchema, PluginInstanceSchema } from "./schemas/plugin.js";
-import type { ProjectSchema, ProjectSettingsSchema } from "./schemas/project.js";
+import type { PluginFormatSchema, PluginInfoSchema, PluginInstanceSchema } from "./schemas/plugins.js";
+import type {
+  CreateProjectRequestSchema,
+  ProjectMetadataPatchSchema,
+  ProjectSchema,
+  ProjectSettingsSchema,
+} from "./schemas/project.js";
 import type {
   RoutingGraphEdgeSchema,
   RoutingGraphNodeSchema,
@@ -83,11 +105,15 @@ export type Pattern = z.infer<typeof PatternSchema>;
 export type FadeType = z.infer<typeof FadeTypeSchema>;
 export type Fade = z.infer<typeof FadeSchema>;
 export type Clip = z.infer<typeof ClipSchema>;
+export type PatternClip = z.infer<typeof PatternClipSchema>;
+export type AudioClip = z.infer<typeof AudioClipSchema>;
+export type AutomationClipRef = z.infer<typeof AutomationClipRefSchema>;
 export type PlaylistTrack = z.infer<typeof PlaylistTrackSchema>;
 export type Playlist = z.infer<typeof PlaylistSchema>;
 
 export type PluginFormat = z.infer<typeof PluginFormatSchema>;
 export type PluginInstance = z.infer<typeof PluginInstanceSchema>;
+export type PluginInfo = z.infer<typeof PluginInfoSchema>;
 export type PluginSlot = z.infer<typeof PluginSlotSchema>;
 export type Send = z.infer<typeof SendSchema>;
 export type InsertKind = z.infer<typeof InsertKindSchema>;
@@ -110,6 +136,8 @@ export type AssetRef = z.infer<typeof AssetRefSchema>;
 
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
+export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
+export type ProjectMetadataPatch = z.infer<typeof ProjectMetadataPatchSchema>;
 
 export type TransportState = z.infer<typeof TransportStateSchema>;
 export type TransportMode = z.infer<typeof TransportModeSchema>;
@@ -119,6 +147,20 @@ export type Message = z.infer<typeof MessageSchema>;
 export type Reply = z.infer<typeof ReplySchema>;
 export type Event = z.infer<typeof EventSchema>;
 export type EngineMessage = z.infer<typeof EngineMessageSchema>;
+export type EngineReply<T = unknown> = Omit<z.infer<typeof EngineReplySchema>, "payload"> & {
+  payload?: T;
+};
+export type EngineEvent = z.infer<typeof EngineEventSchema>;
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
 export type ErrorEnvelope = z.infer<typeof ErrorEnvelopeSchema>;
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
+
+export type FileRoot = z.infer<typeof FileRootSchema>;
+export type FileEntry = z.infer<typeof FileEntrySchema>;
+
+export type AgentToolCall = z.infer<typeof AgentToolCallSchema>;
+export type AgentToolResult = z.infer<typeof AgentToolResultSchema>;
+export type AgentSession = z.infer<typeof AgentSessionSchema>;
+
+export type BrowserAction = z.infer<typeof BrowserActionSchema>;
+export type BrowserSession = z.infer<typeof BrowserSessionSchema>;
