@@ -17,7 +17,6 @@ export * from "./schemas/asset.js";
 export * from "./schemas/transport.js";
 export * from "./schemas/envelope.js";
 export * from "./schemas/project.js";
-export * from "./schemas/engine.js";
 export * from "./schemas/files.js";
 export * from "./schemas/agent.js";
 export * from "./schemas/browser.js";

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { ENGINE_MAX_PAYLOAD_BYTES, PPQN, PROTOCOL_VERSION } from "./constants.js";
 import { AssetRefSchema } from "./schemas/asset.js";
 import {
@@ -166,11 +167,14 @@ export function serializeEngineFrame(message: EngineMessage): Uint8Array {
   return frame;
 }
 
+const EngineFrameSchema = z.union([EngineMessageSchema, ReplySchema, EventSchema]);
+type EngineFrame = z.infer<typeof EngineFrameSchema>;
+
 export function parseEngineFrames(buffer: Uint8Array): {
-  messages: EngineMessage[];
+  messages: EngineFrame[];
   remainder: Uint8Array;
 } {
-  const messages: EngineMessage[] = [];
+  const messages: EngineFrame[] = [];
   let offset = 0;
   while (offset < buffer.length) {
     if (buffer.length - offset < 4) {
@@ -187,7 +191,7 @@ export function parseEngineFrames(buffer: Uint8Array): {
     const payloadBytes = buffer.subarray(offset + 4, offset + 4 + length);
     const payload = new TextDecoder().decode(payloadBytes);
     const parsed = JSON.parse(payload);
-    messages.push(validateEngineMessage(parsed));
+    messages.push(EngineFrameSchema.parse(parsed));
     offset += 4 + length;
   }
   return { messages, remainder: buffer.subarray(offset) };

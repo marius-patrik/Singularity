@@ -88,7 +88,7 @@ export function createEngineBridge(options: EngineBridgeOptions): EngineBridge {
       });
       newSocket.on("data", (data) => {
         receiveBuffer = Buffer.concat([receiveBuffer, data]);
-        const { messages, replies, events, remainder } = parseEngineFrames(
+        const { messages, remainder } = parseEngineFrames(
           new Uint8Array(receiveBuffer.buffer, receiveBuffer.byteOffset, receiveBuffer.length),
         );
         receiveBuffer = Buffer.from(remainder);
@@ -96,22 +96,24 @@ export function createEngineBridge(options: EngineBridgeOptions): EngineBridge {
           if (message.type === "pong" && heartbeatTimeout) {
             clearTimeout(heartbeatTimeout);
             heartbeatTimeout = undefined;
+            continue;
           }
-        }
-        for (const reply of replies) {
-          const flight = inFlight.get(reply.inReplyTo);
-          if (flight) {
-            inFlight.delete(reply.inReplyTo);
-            clearTimeout(flight.timer);
-            flight.resolve(reply as EngineReply<unknown>);
+          if (message.type === "reply" && "inReplyTo" in message) {
+            const flight = inFlight.get(message.inReplyTo);
+            if (flight) {
+              inFlight.delete(message.inReplyTo);
+              clearTimeout(flight.timer);
+              flight.resolve(message as EngineReply<unknown>);
+            }
+            continue;
           }
-        }
-        for (const event of events) {
-          for (const handler of eventHandlers) {
-            try {
-              handler(event);
-            } catch {
-              // Ignore handler errors.
+          if (message.type === "event" && "topic" in message) {
+            for (const handler of eventHandlers) {
+              try {
+                handler(message as EngineEvent);
+              } catch {
+                // Ignore handler errors.
+              }
             }
           }
         }
@@ -188,7 +190,7 @@ export function createEngineBridge(options: EngineBridgeOptions): EngineBridge {
           timer,
         });
         try {
-          sendRaw({ id, type, payload });
+          sendRaw({ id, type, payload } as EngineMessage);
         } catch (err) {
           clearTimeout(timer);
           inFlight.delete(id);

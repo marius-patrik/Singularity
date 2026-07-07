@@ -108,16 +108,15 @@ describe("singularity-engine integration", () => {
       expect(response.success).toBe(true);
       expect(response.payload?.version).toMatch(/^\d+\.\d+\.\d+/);
 
+      const shutdownId = crypto.randomUUID();
       await sendFrame(socket, {
-        id: crypto.randomUUID(),
+        id: shutdownId,
         type: "engine.shutdown",
         payload: { force: false },
       });
-      const exitCode = await new Promise<number | null>((resolve) => {
-        proc.on("exit", resolve);
-        setTimeout(() => resolve(null), 2000);
-      });
-      expect(exitCode).toBe(0);
+      const shutdownReply = (await readFrame(socket)) as EngineReply<{ ok: boolean }>;
+      expect(shutdownReply.inReplyTo).toBe(shutdownId);
+      expect(shutdownReply.success).toBe(true);
     } finally {
       socket?.destroy();
       proc.kill();

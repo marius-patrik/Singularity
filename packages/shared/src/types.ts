@@ -1,18 +1,18 @@
 import type { z } from "zod";
-import type { AssetKindSchema, AssetRefSchema } from "./schemas/asset.js";
 import type {
   AgentSessionSchema,
   AgentToolCallSchema,
   AgentToolResultSchema,
 } from "./schemas/agent.js";
+import type { AssetKindSchema, AssetRefSchema } from "./schemas/asset.js";
 import type {
   AutomationClipSchema,
   AutomationPointSchema,
   AutomationTargetSchema,
   AutomationTargetTypeSchema,
 } from "./schemas/automation.js";
-import type { BrowserActionSchema, BrowserSessionSchema } from "./schemas/browser.js";
 import type { EntityIdSchema, HexColorSchema } from "./schemas/base.js";
+import type { BrowserActionSchema, BrowserSessionSchema } from "./schemas/browser.js";
 import type {
   ChannelRackSchema,
   ChannelSchema,
@@ -21,11 +21,7 @@ import type {
   MixerInsertRefSchema,
 } from "./schemas/channel.js";
 import type {
-  EngineEventSchema,
   EngineMessageSchema,
-  EngineReplySchema,
-} from "./schemas/engine.js";
-import type {
   ErrorCodeSchema,
   ErrorEnvelopeSchema,
   EventSchema,
@@ -57,7 +53,8 @@ import type {
   PlaylistSchema,
   PlaylistTrackSchema,
 } from "./schemas/playlist.js";
-import type { PluginFormatSchema, PluginInfoSchema, PluginInstanceSchema } from "./schemas/plugins.js";
+import type { PluginFormatSchema, PluginInstanceSchema } from "./schemas/plugin.js";
+import type { PluginInfoSchema, PluginScanResultSchema } from "./schemas/plugins.js";
 import type {
   CreateProjectRequestSchema,
   ProjectMetadataPatchSchema,
@@ -114,6 +111,7 @@ export type Playlist = z.infer<typeof PlaylistSchema>;
 export type PluginFormat = z.infer<typeof PluginFormatSchema>;
 export type PluginInstance = z.infer<typeof PluginInstanceSchema>;
 export type PluginInfo = z.infer<typeof PluginInfoSchema>;
+export type PluginScanResult = z.infer<typeof PluginScanResultSchema>;
 export type PluginSlot = z.infer<typeof PluginSlotSchema>;
 export type Send = z.infer<typeof SendSchema>;
 export type InsertKind = z.infer<typeof InsertKindSchema>;
@@ -147,10 +145,10 @@ export type Message = z.infer<typeof MessageSchema>;
 export type Reply = z.infer<typeof ReplySchema>;
 export type Event = z.infer<typeof EventSchema>;
 export type EngineMessage = z.infer<typeof EngineMessageSchema>;
-export type EngineReply<T = unknown> = Omit<z.infer<typeof EngineReplySchema>, "payload"> & {
+export type EngineReply<T = unknown> = Omit<z.infer<typeof ReplySchema>, "payload"> & {
   payload?: T;
 };
-export type EngineEvent = z.infer<typeof EngineEventSchema>;
+export type EngineEvent = z.infer<typeof EventSchema>;
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
 export type ErrorEnvelope = z.infer<typeof ErrorEnvelopeSchema>;
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;

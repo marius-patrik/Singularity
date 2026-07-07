@@ -259,13 +259,36 @@ export class ProjectStore {
   private reduceMutation(project: Project, mutation: Mutation): Project {
     switch (mutation.type) {
       case "channel.create": {
-        const payload = mutation.payload as { channelId: string; name: string; type: string };
+        const payload = mutation.payload as {
+          channelId: string;
+          name: string;
+          type: "sampler" | "vstInstrument" | "audioClip" | "layer" | "midiOut";
+          index: number;
+        };
+        const settings = {
+          type: "sampler" as const,
+          sampleAssetId: "",
+          rootNote: 60,
+          loopMode: "none" as const,
+        };
         return {
           ...project,
           channelRack: {
             channels: [
               ...project.channelRack.channels,
-              { id: payload.channelId, name: payload.name, type: payload.type, steps: [] },
+              {
+                id: payload.channelId,
+                index: payload.index,
+                name: payload.name,
+                type: payload.type,
+                mute: false,
+                solo: false,
+                volume: 0.78,
+                pan: 0,
+                pitch: 0,
+                output: { insertId: "master" },
+                settings,
+              },
             ],
           },
           modifiedAt: new Date().toISOString(),
@@ -276,22 +299,21 @@ export class ProjectStore {
         return {
           ...project,
           channelRack: {
-            channels: project.channelRack.channels.filter(
-              (c) => (c as { id: string }).id !== payload.channelId,
-            ),
+            channels: project.channelRack.channels.filter((c) => c.id !== payload.channelId),
           },
           modifiedAt: new Date().toISOString(),
         };
       }
       case "channel.update": {
-        const payload = mutation.payload as { channelId: string; patch: Record<string, unknown> };
+        const payload = mutation.payload as {
+          channelId: string;
+          patch: Partial<Project["channelRack"]["channels"][number]>;
+        };
         return {
           ...project,
           channelRack: {
             channels: project.channelRack.channels.map((c) =>
-              (c as { id: string }).id === payload.channelId
-                ? { ...(c as Record<string, unknown>), ...payload.patch }
-                : c,
+              c.id === payload.channelId ? { ...c, ...payload.patch } : c,
             ),
           },
           modifiedAt: new Date().toISOString(),

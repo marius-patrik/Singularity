@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { EntityIdSchema } from "./base.js";
-
-export const PluginFormatSchema = z.enum(["vst3", "au", "clap", "lv2", "aax"]);
+import { PluginFormatSchema } from "./plugin.js";
 
 export const PluginInfoSchema = z.object({
   id: EntityIdSchema,
@@ -14,4 +13,9 @@ export const PluginInfoSchema = z.object({
   version: z.string(),
   uniqueId: z.string(),
   scannedAt: z.string().datetime(),
+});
+
+export const PluginScanResultSchema = z.object({
+  plugins: z.array(PluginInfoSchema),
+  errors: z.array(z.object({ path: z.string(), message: z.string() })),
 });
